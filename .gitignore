@@ -7,3 +7,6 @@
 /pkg/
 /spec/reports/
 /tmp/
+
+# Ignore RSpec state
+/spec/examples.txt
