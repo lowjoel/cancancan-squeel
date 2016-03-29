@@ -46,6 +46,15 @@ RSpec.describe CanCanCan::Squeel do
       expect(parent1.other_parents.accessible_by(ability)).to contain_exactly(parent2)
     end
 
+    it 'allows combining conditions on the same object' do
+      purple = Shape.create!(color: :purple, primary: false)
+
+      ability.can(:read, Shape, color: Shape.colors[:purple], primary: false)
+
+      accessible = Shape.accessible_by(ability)
+      expect(accessible).to contain_exactly(purple)
+    end
+
     it 'allows filters on enums' do
       red = Shape.create!(color: :red)
       green = Shape.create!(color: :green)

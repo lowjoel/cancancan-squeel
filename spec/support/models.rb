@@ -74,6 +74,7 @@ class DatabaseAdapter
 
       create_table(:shapes) do |t|
         t.integer :color, default: 0, null: false
+        t.boolean :primary, default: false
       end
     end
   end
@@ -96,5 +97,5 @@ class Child < ActiveRecord::Base
 end
 
 class Shape < ActiveRecord::Base
-  enum color: [:red, :green, :blue]
+  enum color: [:red, :green, :blue, :purple]
 end
