@@ -1,5 +1,6 @@
 class CanCanCan::Squeel::SqueelAdapter < CanCan::ModelAdapters::AbstractAdapter
   include CanCanCan::Squeel::AttributeMapper
+  include CanCanCan::Squeel::ExpressionCombinator
 
   def self.for_class?(model_class)
     model_class <= ActiveRecord::Base
@@ -106,11 +107,8 @@ class CanCanCan::Squeel::SqueelAdapter < CanCan::ModelAdapters::AbstractAdapter
     right_expression = build_expression_from_rule(squeel, rule)
     return right_expression if right_expression.nil? || !left_expression
 
-    if rule.base_behavior
-      left_expression | right_expression
-    else
-      left_expression & right_expression
-    end
+    operator = rule.base_behavior ? :| : :&
+    combine_squeel_expressions(left_expression, operator, right_expression)
   end
 
   # Builds a Squeel expression representing the rule's conditions.
