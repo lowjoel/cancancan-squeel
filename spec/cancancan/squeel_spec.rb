@@ -8,6 +8,11 @@ RSpec.describe CanCanCan::Squeel do
   let(:ability) { double.extend(CanCan::Ability) }
 
   with_database(:sqlite) do
+    it 'defaults to not allowing anything' do
+      _parent = Parent.create!
+      expect(Parent.accessible_by(ability)).to be_empty
+    end
+
     it 'respects scope on included associations' do
       ability.can :read, [Parent, Child]
 
