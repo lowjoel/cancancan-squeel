@@ -1,5 +1,8 @@
-require 'cancancan/squeel/version'
+require 'active_record'
+require 'cancancan'
+require 'squeel'
 
-module CanCanCan::Squeel
-  # Your code goes here...
-end
+require 'cancancan/squeel/version'
+require 'cancancan/squeel/active_record_disabler'
+require 'cancancan/squeel/squeel_adapter'
+
