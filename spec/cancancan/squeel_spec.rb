@@ -46,6 +46,17 @@ RSpec.describe CanCanCan::Squeel do
       expect(parent1.other_parents.accessible_by(ability)).to contain_exactly(parent2)
     end
 
+    it 'allows defining conditions on foreign keys' do
+      parent1 = Parent.create!
+      parent2 = Parent.create!
+      child1 = Child.create!(parent: parent1)
+      child2 = Child.create!(parent: parent1)
+      _child3 = Child.create!(parent: parent2)
+      ability.can(:read, Child, parent: parent1)
+
+      expect(Child.accessible_by(ability)).to contain_exactly(child1, child2)
+    end
+
     it 'allows combining conditions on the same object' do
       purple = Shape.create!(color: :purple, primary: false)
 

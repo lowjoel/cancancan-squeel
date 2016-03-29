@@ -18,12 +18,27 @@ module CanCanCan::Squeel::AttributeMapper
   # @return [Array<(Symbol, Symbol, Object)>] A triple containing the column to compare with, the
   #   comparator to use, and the value to compare with.
   def squeel_comparison_for(model_class, key, comparator, value)
+    key, value = map_association(model_class, key, value)
+
+    comparator = squeel_comparator_for(comparator, value)
+    [key, comparator, value]
+  end
+
+  # Picks the table column to compare the value against for the given key.
+  #
+  # This sets associations to use the proper foreign key column.
+  #
+  # @param [Class] model_class The model class which the key references.
+  # @param [Symbol] key The column being compared.
+  # @param value The value to be comparing against.
+  # @return [Array<(Symbol, Object)>] A tuple containing the column to compare with and the value
+  #   to compare with.
+  def map_association(model_class, key, value)
     if (association = model_class.reflect_on_association(key))
       key = association.foreign_key
     end
 
-    comparator = squeel_comparator_for(comparator, value)
-    [key, comparator, value]
+    [key, value]
   end
 
   # Maps the given comparator to a comparator appropriate for the given value.
