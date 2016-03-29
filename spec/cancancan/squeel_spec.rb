@@ -95,6 +95,31 @@ RSpec.describe CanCanCan::Squeel do
 
         expect(accessible).to contain_exactly(red, green)
       end
+
+      it 'combines allow rules' do
+        ability.can(:read, Shape, color: Shape.colors[:red])
+        ability.can(:read, Shape, color: Shape.colors[:blue])
+
+        red = Shape.create!(color: :red)
+        _green = Shape.create!(color: :green)
+        blue = Shape.create!(color: :blue)
+        accessible = Shape.accessible_by(ability)
+
+        expect(accessible).to contain_exactly(red, blue)
+      end
+
+      it 'combines disallow rules' do
+        ability.can(:read, Shape)
+        ability.cannot(:read, Shape, color: Shape.colors[:red])
+        ability.cannot(:read, Shape, color: Shape.colors[:green])
+
+        _red = Shape.create!(color: :red)
+        _green = Shape.create!(color: :green)
+        blue = Shape.create!(color: :blue)
+        accessible = Shape.accessible_by(ability)
+
+        expect(accessible).to contain_exactly(blue)
+      end
     end
   end
 end
