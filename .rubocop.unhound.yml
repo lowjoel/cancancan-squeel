@@ -1,0 +1,109 @@
+Style/CollectionMethods:
+  Enabled: true
+  PreferredMethods:
+    reduce:
+    inject: 'reduce'
+    find:
+    detect: 'find'
+
+Style/FileName:
+  Enabled: true
+
+Style/GuardClause:
+  Enabled: true
+
+Style/IfUnlessModifier:
+  Enabled: true
+
+Style/PercentLiteralDelimiters:
+  Enabled: true
+
+Style/SignalException:
+  Enabled: true
+
+Style/SingleLineBlockParams:
+  Enabled: true
+
+Style/SingleLineMethods:
+  Enabled: true
+
+Style/TrailingCommaInArguments:
+  Enabled: true
+
+Style/TrailingCommaInLiteral:
+  Enabled: true
+
+Metrics/AbcSize:
+  Enabled: true
+
+Metrics/ClassLength:
+  Enabled: true
+
+Metrics/ModuleLength:
+  Enabled: true
+
+Metrics/CyclomaticComplexity:
+  Enabled: true
+
+Metrics/MethodLength:
+  Enabled: true
+
+Metrics/ParameterLists:
+  Enabled: true
+
+Metrics/PerceivedComplexity:
+  Enabled: true
+
+Lint/AssignmentInCondition:
+  Enabled: true
+
+Style/AccessorMethodName:
+  Enabled: true
+
+Style/Alias:
+  Enabled: true
+  EnforcedStyle: prefer_alias_method
+
+Style/Documentation:
+  Enabled: true
+
+Style/DoubleNegation:
+  Enabled: true
+
+Style/EachWithObject:
+  Enabled: true
+
+Style/EmptyLiteral:
+  Enabled: true
+
+Style/ModuleFunction:
+  Enabled: true
+
+Style/OneLineConditional:
+  Enabled: true
+
+Style/PerlBackrefs:
+  Enabled: true
+
+Style/SpecialGlobalVars:
+  Enabled: true
+
+Style/VariableInterpolation:
+  Enabled: true
+
+Style/WhenThen:
+  Enabled: true
+
+Lint/EachWithObjectArgument:
+  Enabled: true
+
+Lint/HandleExceptions:
+  Enabled: true
+
+Lint/LiteralInCondition:
+  Description: Checks of literals used in conditions.
+  Enabled: true
+
+Lint/LiteralInInterpolation:
+  Description: Checks for literals used in interpolation.
+  Enabled: true
