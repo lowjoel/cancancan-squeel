@@ -11,3 +11,13 @@ uses
  - `WHERE` fragments, joined lexically using `OR` or `AND` or `NOT`.
 
 As a side effect of using `squeel`, this allows self-joins in rule definitions.
+
+## Usage
+
+In your `Gemfile`, insert the following line:
+
+```ruby
+gem 'cancancan-squeel'
+```
+
+after you included `cancancan`.
