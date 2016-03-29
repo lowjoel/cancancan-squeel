@@ -72,5 +72,20 @@ RSpec.describe CanCanCan::Squeel do
       accessible = Shape.accessible_by(ability, :update)
       expect(accessible).to contain_exactly(red, blue)
     end
+
+    context 'when multiple rules govern the same resource' do
+      it 'prioritises rules coming last' do
+        ability.cannot(:read, Shape, color: Shape.colors[:red])
+        ability.can(:read, Shape)
+        ability.cannot(:read, Shape, color: Shape.colors[:blue])
+
+        red = Shape.create!(color: :red)
+        green = Shape.create!(color: :green)
+        _blue = Shape.create!(color: :blue)
+        accessible = Shape.accessible_by(ability)
+
+        expect(accessible).to contain_exactly(red, green)
+      end
+    end
   end
 end

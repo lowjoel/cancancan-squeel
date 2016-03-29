@@ -2,6 +2,9 @@ class CanCanCan::Squeel::SqueelAdapter < CanCan::ModelAdapters::AbstractAdapter
   include CanCanCan::Squeel::AttributeMapper
   include CanCanCan::Squeel::ExpressionCombinator
 
+  ALWAYS_TRUE = CanCanCan::Squeel::ExpressionCombinator::ALWAYS_TRUE
+  ALWAYS_FALSE = CanCanCan::Squeel::ExpressionCombinator::ALWAYS_FALSE
+
   def self.for_class?(model_class)
     model_class <= ActiveRecord::Base
   end
@@ -80,18 +83,16 @@ class CanCanCan::Squeel::SqueelAdapter < CanCan::ModelAdapters::AbstractAdapter
   # This builds Squeel expression for each rule, and combines the expression with those to the left
   # using a fold-left.
   #
+  # The rules provided by Cancancan are in reverse order, i.e. the lowest priority rule is first.
+  #
   # @param [ActiveRecord::Relation] scope The scope to add the rule conditions to.
   def add_conditions_to_scope(scope)
     adapter = self
     rules = @rules
 
-    # default n
     scope.where do
-      rules.reduce(nil) do |left_expression, rule|
-        combined_rule = adapter.send(:combine_expression_with_rule, self, left_expression, rule)
-        break if combined_rule.nil?
-
-        combined_rule
+      rules.reverse.reduce(ALWAYS_FALSE) do |left_expression, rule|
+        adapter.send(:combine_expression_with_rule, self, left_expression, rule)
       end
     end
   end
@@ -102,10 +103,8 @@ class CanCanCan::Squeel::SqueelAdapter < CanCan::ModelAdapters::AbstractAdapter
   # @param left_expression The Squeel expression for all preceding rules.
   # @param [CanCan::Rule] rule The rule being added.
   # @return [Squeel::Nodes::Node] If the rule has an expression.
-  # @return [NilClass] If the rule is unconditional.
   def combine_expression_with_rule(squeel, left_expression, rule)
     right_expression = build_expression_from_rule(squeel, rule)
-    return right_expression if right_expression.nil? || !left_expression
 
     operator = rule.base_behavior ? :| : :&
     combine_squeel_expressions(left_expression, operator, right_expression)
@@ -115,9 +114,14 @@ class CanCanCan::Squeel::SqueelAdapter < CanCan::ModelAdapters::AbstractAdapter
   #
   # @param squeel The Squeel scope.
   # @param [CanCan::Rule] rule The rule being built.
+  # @return [Squeel::Nodes::Node] The expression presenting the rule's conditions.
   def build_expression_from_rule(squeel, rule)
-    comparator = rule.base_behavior ? :== : :!=
-    build_expression_node(squeel, @model_class, comparator, rule.conditions, true)
+    if rule.conditions.empty?
+      rule.base_behavior ? ALWAYS_TRUE : ALWAYS_FALSE
+    else
+      comparator = rule.base_behavior ? :== : :!=
+      build_expression_node(squeel, @model_class, comparator, rule.conditions, true)
+    end
   end
 
   # Builds a new Squeel expression node.
