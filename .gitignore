@@ -8,5 +8,9 @@
 /spec/reports/
 /tmp/
 
+# Ignore generated code coverage information
+/spec/coverage/*
+/coverage/*
+
 # Ignore RSpec state
 /spec/examples.txt
