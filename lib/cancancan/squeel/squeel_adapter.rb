@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 class CanCanCan::Squeel::SqueelAdapter < CanCan::ModelAdapters::AbstractAdapter
   include CanCanCan::Squeel::AttributeMapper
   include CanCanCan::Squeel::ExpressionCombinator

@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 module CanCanCan::Squeel::ExpressionCombinator
   # This true expression is used to indicate a condition that is always satisfied.
   ALWAYS_TRUE = Squeel::Nodes::Predicate.new(Squeel::Nodes::Literal.new('1'), :eq, 1).freeze

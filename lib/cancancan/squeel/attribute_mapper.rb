@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 # Implements mapping attributes, values, and comparators for a given model to appropriate
 # database equivalents.
 #

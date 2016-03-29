@@ -2,7 +2,13 @@
 
 ### enhancements
 
-  - Added usage instructions.
+ - Add Frozen String Literal directive [@lowjoel](https://github.com/lowjoel)
+
+## 0.1.1
+
+### enhancements
+
+ - Added usage instructions. [@lowjoel](https://github.com/lowjoel)
 
 ### bug fixes
 

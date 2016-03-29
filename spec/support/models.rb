@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 # Included in group definitions to indicate which database adapter the specs in the group should
 # run as.
 module ModelsGroupHelper
