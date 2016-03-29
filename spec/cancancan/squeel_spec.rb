@@ -57,6 +57,29 @@ RSpec.describe CanCanCan::Squeel do
       expect(Child.accessible_by(ability)).to contain_exactly(child1, child2)
     end
 
+    it 'allows alternative values for the same attribute' do
+      red = Shape.create!(color: :red)
+      _green = Shape.create!(color: :green)
+      _blue = Shape.create!(color: :blue)
+
+      ability.can(:read, Shape, color: [Shape.colors[:purple],
+                                        Shape.colors[:red]])
+
+      accessible = Shape.accessible_by(ability)
+      expect(accessible).to contain_exactly(red)
+    end
+
+    it 'allows excluded values for the same attribute' do
+      _green = Shape.create!(color: :green)
+      _blue = Shape.create!(color: :blue)
+
+      ability.cannot(:read, Shape, color: [Shape.colors[:blue],
+                                           Shape.colors[:green]])
+
+      accessible = Shape.accessible_by(ability)
+      expect(accessible).to be_empty
+    end
+
     it 'allows combining conditions on the same object' do
       purple = Shape.create!(color: :purple, primary: false)
 

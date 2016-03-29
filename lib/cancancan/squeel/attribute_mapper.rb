@@ -49,10 +49,13 @@ module CanCanCan::Squeel::AttributeMapper
   # @param value The value to be comparing against.
   # @return [Symbol] The comparator for the desired effect, suitable for the given type.
   def squeel_comparator_for(comparator, value)
-    case [comparator, value]
-    when :==, Array then :>>
-    when :!=, Array then :<<
-    else comparator
+    if value.is_a?(Array)
+      case comparator
+      when :== then :>>
+      when :!= then :<<
+      end
+    else
+      comparator
     end
   end
 end
