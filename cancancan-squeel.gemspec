@@ -8,6 +8,7 @@ Gem::Specification.new do |spec|
   spec.version       = CanCanCan::Squeel::VERSION
   spec.authors       = ['Joel Low']
   spec.email         = ['joel@joelsplace.sg']
+  spec.license       = 'MIT'
 
   spec.summary       = 'Squeel database adapter for CanCanCan.'
   spec.description   = "Implements CanCanCan's rule-based record fetching using Squeel."
