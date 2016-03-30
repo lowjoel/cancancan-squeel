@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 class CanCanCan::Squeel::SqueelAdapter < CanCan::ModelAdapters::AbstractAdapter
-  include CanCanCan::Squeel::AttributeMapper
   include CanCanCan::Squeel::ExpressionCombinator
 
   ALWAYS_TRUE = CanCanCan::Squeel::ExpressionCombinator::ALWAYS_TRUE
@@ -121,44 +120,7 @@ class CanCanCan::Squeel::SqueelAdapter < CanCan::ModelAdapters::AbstractAdapter
       rule.base_behavior ? ALWAYS_TRUE : ALWAYS_FALSE
     else
       comparator = rule.base_behavior ? :== : :!=
-      build_expression_node(squeel, @model_class, comparator, rule.conditions, true)
-    end
-  end
-
-  # Builds a new Squeel expression node.
-  #
-  # @param node The parent node context.
-  # @param [Class] model_class The model class which the conditions reference.
-  # @param [Symbol] comparator The comparator to use when generating the comparison.
-  # @param [Hash] conditions The values to compare the given node's attributes against.
-  # @param [Boolean] root True if the node being built is from the root. The root node is special
-  #   because it does not mutate itself; all other nodes do.
-  def build_expression_node(node, model_class, comparator, conditions, root = false)
-    conditions.reduce(nil) do |left_expression, (key, value)|
-      comparison_node = build_comparison_node(root ? node : node.dup, model_class, key,
-                                              comparator, value)
-      if left_expression
-        left_expression & comparison_node
-      else
-        comparison_node
-      end
-    end
-  end
-
-  # Builds a comparison node for the given key and value.
-  #
-  # @param node The node context to build the comparison.
-  # @param [Class] model_class The model class which the conditions reference.
-  # @param [Symbol] key The column to compare against.
-  # @param [Symbol] comparator The comparator to compare the column against the value.
-  # @param value The value to compare the column against.
-  def build_comparison_node(node, model_class, key, comparator, value)
-    if value.is_a?(Hash)
-      reflection = model_class.reflect_on_association(key)
-      build_expression_node(node.__send__(key), reflection.klass, comparator, value)
-    else
-      key, comparator, value = squeel_comparison_for(model_class, key, comparator, value)
-      node.__send__(key).public_send(comparator, value)
+      CanCanCan::Squeel::ExpressionBuilder.build(squeel, @model_class, comparator, rule.conditions)
     end
   end
 end
