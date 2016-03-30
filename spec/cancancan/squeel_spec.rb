@@ -83,6 +83,31 @@ RSpec.describe CanCanCan::Squeel do
       expect(accessible).to contain_exactly(red)
     end
 
+    it 'allows ranges for the attributes' do
+      red = Shape.create!(color: :red)
+      green = Shape.create!(color: :green)
+      _blue = Shape.create!(color: :blue)
+
+      ability.can(:read, Shape, color: Shape.colors[:red]..Shape.colors[:red])
+      ability.can(:read, Shape, color: Shape.colors[:green]...Shape.colors[:blue])
+      ability.cannot(:read, Shape, color: Shape.colors[:blue]..Shape.colors[:blue])
+      ability.cannot(:read, Shape, color: Shape.colors[:red]...Shape.colors[:red])
+
+      accessible = Shape.accessible_by(ability)
+      expect(accessible).to contain_exactly(red, green)
+    end
+
+    it 'allows ranges for nested attributes' do
+      ability.can :read, Parent, children: { id: 0..5 }
+
+      parent = Parent.create!
+      _child1 = Child.create!(parent: parent, created_at: 1.hours.ago)
+      _child2 = Child.create!(parent: parent, created_at: 2.hours.ago)
+
+      accessible = Parent.accessible_by(ability)
+      expect(accessible).to contain_exactly(parent)
+    end
+
     it 'allows excluded values for the same attribute' do
       _green = Shape.create!(color: :green)
       _blue = Shape.create!(color: :blue)

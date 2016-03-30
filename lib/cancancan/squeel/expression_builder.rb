@@ -51,14 +51,45 @@ module CanCanCan::Squeel::ExpressionBuilder
   # @param value The value to compare the column against.
   def build_comparison_node(node, model_class, key, comparator, value)
     if value.is_a?(Hash)
-      reflection_class = model_class.reflect_on_association(key).klass
-      expression, joins = build_expression_node(node.__send__(key), reflection_class, comparator,
-                                                value)
-      [expression, joins.map { |join| join.unshift(key) }.unshift([key])]
+      build_association_comparison_node(node, model_class, key, comparator, value)
     else
-      key, comparator, value = CanCanCan::Squeel::AttributeMapper.
-                               squeel_comparison_for(model_class, key, comparator, value)
-      [node.__send__(key).public_send(comparator, value), []]
+      build_scalar_comparison_node(node, model_class, key, comparator, value)
     end
+  end
+
+  # Builds a comparison node for the given association and association attributes.
+  #
+  # @param node The node context to build the comparison.
+  # @param [Class] model_class The model class which the conditions reference.
+  # @param [Symbol] key The association to compare against.
+  # @param [Symbol] comparator The comparator to compare the column against the value.
+  # @param [Hash] value The attributes to compare the column against.
+  def build_association_comparison_node(node, model_class, key, comparator, value)
+    reflection_class = model_class.reflect_on_association(key).klass
+    expression, joins = build_expression_node(node.__send__(key), reflection_class, comparator,
+                                              value)
+    [expression, joins.map { |join| join.unshift(key) }.unshift([key])]
+  end
+
+  # Builds a comparison node for the given attribute and value.
+  #
+  # @param node The node context to build the comparison.
+  # @param [Class] model_class The model class which the conditions reference.
+  # @param [Symbol] key The column to compare against.
+  # @param [Symbol] comparator The comparator to compare the column against the value.
+  # @param value The value to compare the column against.
+  def build_scalar_comparison_node(node, model_class, key, comparator, value)
+    combinator, comparisons = CanCanCan::Squeel::AttributeMapper.
+                              squeel_comparison_for(model_class, key, comparator, value)
+    attribute = node.__send__(comparisons.first.first)
+
+    expression = comparisons.reduce(nil) do |left_expression, (_, comparator, value)|
+      right_expression = attribute.dup.public_send(comparator, value)
+      next right_expression unless left_expression
+
+      left_expression.public_send(combinator, right_expression)
+    end
+
+    [expression, []]
   end
 end
