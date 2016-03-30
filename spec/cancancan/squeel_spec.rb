@@ -63,6 +63,14 @@ RSpec.describe CanCanCan::Squeel do
       expect(Child.accessible_by(ability)).to contain_exactly(child1, child2)
     end
 
+    it 'does not create unnecessary joins' do
+      ability.can(:read, Parent, children: { id: 1 })
+      ability.can(:read, Parent)
+
+      accessible = Parent.accessible_by(ability)
+      expect(accessible.joins_values).to be_empty
+    end
+
     it 'allows alternative values for the same attribute' do
       red = Shape.create!(color: :red)
       _green = Shape.create!(color: :green)

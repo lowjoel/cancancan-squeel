@@ -12,6 +12,9 @@ module CanCanCan::Squeel::ExpressionBuilder
   # @param [Class] model_class The model class which the conditions reference.
   # @param [Symbol] comparator The comparator to use when generating the comparison.
   # @param [Hash] conditions The values to compare the given node's attributes against.
+  # @return [Array<(Squeel::Nodes::Node, Array<Array<Symbol>>)>] A tuple containing the Squeel
+  #   expression representing the rule's conditions, as well as an array of joins which the Squeel
+  #   expression must be joined to.
   def build(squeel, model_class, comparator, conditions)
     build_expression_node(squeel, model_class, comparator, conditions, true)
   end
@@ -24,14 +27,17 @@ module CanCanCan::Squeel::ExpressionBuilder
   # @param [Hash] conditions The values to compare the given node's attributes against.
   # @param [Boolean] root True if the node being built is from the root. The root node is special
   #   because it does not mutate itself; all other nodes do.
+  # @return [Array<(Squeel::Nodes::Node, Array<Array<Symbol>>)>] A tuple containing the Squeel
+  #   expression representing the rule's conditions, as well as an array of joins which the Squeel
+  #   expression must be joined to.
   def build_expression_node(node, model_class, comparator, conditions, root = false)
-    conditions.reduce(nil) do |left_expression, (key, value)|
-      comparison_node = build_comparison_node(root ? node : node.dup, model_class, key,
-                                              comparator, value)
+    conditions.reduce([nil, []]) do |(left_expression, joins), (key, value)|
+      comparison_node, node_joins = build_comparison_node(root ? node : node.dup, model_class,
+                                                          key, comparator, value)
       if left_expression
-        left_expression & comparison_node
+        [left_expression & comparison_node, joins.concat(node_joins)]
       else
-        comparison_node
+        [comparison_node, node_joins]
       end
     end
   end
@@ -45,12 +51,14 @@ module CanCanCan::Squeel::ExpressionBuilder
   # @param value The value to compare the column against.
   def build_comparison_node(node, model_class, key, comparator, value)
     if value.is_a?(Hash)
-      reflection = model_class.reflect_on_association(key)
-      build_expression_node(node.__send__(key), reflection.klass, comparator, value)
+      reflection_class = model_class.reflect_on_association(key).klass
+      expression, joins = build_expression_node(node.__send__(key), reflection_class, comparator,
+                                                value)
+      [expression, joins.map { |join| join.unshift(key) }.unshift([key])]
     else
       key, comparator, value = CanCanCan::Squeel::AttributeMapper.
                                squeel_comparison_for(model_class, key, comparator, value)
-      node.__send__(key).public_send(comparator, value)
+      [node.__send__(key).public_send(comparator, value), []]
     end
   end
 end

@@ -53,7 +53,10 @@ class CanCanCan::Squeel::SqueelAdapter < CanCan::ModelAdapters::AbstractAdapter
     relation = subject.public_send(name)
     klass = subject.class.reflect_on_association(name).klass
 
-    relation.where { CanCanCan::Squeel::ExpressionBuilder.build(self, klass, :==, value) }.any?
+    relation.where do
+      expression, = CanCanCan::Squeel::ExpressionBuilder.build(self, klass, :==, value)
+      expression
+    end.any?
   end
   private_class_method :matches_relation?
 
@@ -66,32 +69,17 @@ class CanCanCan::Squeel::SqueelAdapter < CanCan::ModelAdapters::AbstractAdapter
 
   # Builds a relation that expresses the set of provided rules.
   #
-  # This first joins all the tables specified in the rules, then builds the corresponding Squeel
-  # expression for the conditions.
+  # The required Squeel expression is built, then the joins which are necessary to satisfy the
+  # expressions are added to the query scope.
   def relation
-    join_scope = @rules.reduce(@model_class.where(nil)) do |scope, rule|
-      add_joins_to_scope(scope, build_join_list(rule.conditions))
+    adapter = self
+    join_list = nil
+    scope = @model_class.where(nil).where do
+      expression, join_list = adapter.send(:build_accessible_by_expression, self)
+      expression
     end
 
-    add_conditions_to_scope(join_scope)
-  end
-
-  # Builds an array of joins for the given conditions hash.
-  #
-  # For example:
-  #
-  # a: { b: { c: 3 }, d: { e: 4 }} => [[:a, :b], [:a, :d]]
-  #
-  # @param [Hash] conditions The conditions to build the joins.
-  # @return [Array<Array<Symbol>>] The joins needed to satisfy the given conditions
-  def build_join_list(conditions)
-    conditions.flat_map do |key, value|
-      if value.is_a?(Hash)
-        [[key]].concat(build_join_list(value).map { |join| Array(join).unshift(key) })
-      else
-        []
-      end
-    end
+    add_joins_to_scope(scope, join_list)
   end
 
   # Builds a relation, outer joined on the provided associations.
@@ -109,22 +97,17 @@ class CanCanCan::Squeel::SqueelAdapter < CanCan::ModelAdapters::AbstractAdapter
     end
   end
 
-  # Adds the rule conditions to the scope.
-  #
   # This builds Squeel expression for each rule, and combines the expression with those to the left
   # using a fold-left.
   #
   # The rules provided by Cancancan are in reverse order, i.e. the lowest priority rule is first.
   #
-  # @param [ActiveRecord::Relation] scope The scope to add the rule conditions to.
-  def add_conditions_to_scope(scope)
-    adapter = self
-    rules = @rules
-
-    scope.where do
-      rules.reverse.reduce(ALWAYS_FALSE) do |left_expression, rule|
-        adapter.send(:combine_expression_with_rule, self, left_expression, rule)
-      end
+  # @param squeel The Squeel scope.
+  # @return [Array<(Squeel::Nodes::Node, Array<Array<Symbol>>)>] A tuple containing the Squeel
+  #   expression, as well as an array of joins which the Squeel expression must be joined to.
+  def build_accessible_by_expression(squeel)
+    @rules.reverse.reduce([ALWAYS_FALSE, []]) do |(left_expression, joins), rule|
+      combine_expression_with_rule(squeel, left_expression, joins, rule)
     end
   end
 
@@ -132,23 +115,29 @@ class CanCanCan::Squeel::SqueelAdapter < CanCan::ModelAdapters::AbstractAdapter
   #
   # @param squeel The Squeel scope.
   # @param left_expression The Squeel expression for all preceding rules.
+  # @param [Array<Array<Symbol>>] joins An array of joins which the Squeel expression must be
+  #   joined to.
   # @param [CanCan::Rule] rule The rule being added.
-  # @return [Squeel::Nodes::Node] If the rule has an expression.
-  def combine_expression_with_rule(squeel, left_expression, rule)
-    right_expression = build_expression_from_rule(squeel, rule)
+  # @return [Array<(Squeel::Nodes::Node, Array<Array<Symbol>>)>] A tuple containing the Squeel
+  #   expression, as well as an array of joins which the Squeel expression must be joined to.
+  def combine_expression_with_rule(squeel, left_expression, joins, rule)
+    right_expression, right_expression_joins = build_expression_from_rule(squeel, rule)
 
     operator = rule.base_behavior ? :| : :&
-    combine_squeel_expressions(left_expression, operator, right_expression)
+    combine_squeel_expressions(left_expression, joins, operator, right_expression,
+                               right_expression_joins)
   end
 
   # Builds a Squeel expression representing the rule's conditions.
   #
   # @param squeel The Squeel scope.
   # @param [CanCan::Rule] rule The rule being built.
-  # @return [Squeel::Nodes::Node] The expression presenting the rule's conditions.
+  # @return [Array<(Squeel::Nodes::Node, Array<Array<Symbol>>)>] A tuple containing the Squeel
+  #   expression representing the rule's conditions, as well as an array of joins which the Squeel
+  #   expression must be joined to.
   def build_expression_from_rule(squeel, rule)
     if rule.conditions.empty?
-      rule.base_behavior ? ALWAYS_TRUE : ALWAYS_FALSE
+      [rule.base_behavior ? ALWAYS_TRUE : ALWAYS_FALSE, []]
     else
       comparator = rule.base_behavior ? :== : :!=
       CanCanCan::Squeel::ExpressionBuilder.build(squeel, @model_class, comparator, rule.conditions)

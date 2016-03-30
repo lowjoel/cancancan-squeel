@@ -10,13 +10,21 @@ module CanCanCan::Squeel::ExpressionCombinator
   # constants and performs simplification.
   #
   # @param [Squeel::Nodes::Node] left_expression The left expression.
+  # @param [Array] left_expression_joins An array of joins which the Squeel expression must be
+  #   joined to.
   # @param [Symbol] operator The operator to combine with. This must be either +:&+ or +:|+.
   # @param [Squeel::Nodes::Node] right_expression The right expression.
-  # @return [Squeel::Nodes::Node] The combination of the given expressions.
-  def combine_squeel_expressions(left_expression, operator, right_expression)
+  # @param [Array] right_expression_joins An array of joins which the Squeel expression must be
+  #   joined to.
+  # @return [Array<(Squeel::Nodes::Node, Array)>] A tuple containing the combination of the given
+  #   expressions, as well as an array of joins which the Squeel expression must be joined to.
+  def combine_squeel_expressions(left_expression, left_expression_joins, operator,
+                                 right_expression, right_expression_joins)
     case operator
-    when :& then conjunction_expressions(left_expression, right_expression)
-    when :| then disjunction_expressions(left_expression, right_expression)
+    when :& then conjunction_expressions(left_expression, left_expression_joins,
+                                         right_expression, right_expression_joins)
+    when :| then disjunction_expressions(left_expression, left_expression_joins,
+                                         right_expression, right_expression_joins)
     else
       raise ArgumentError, "#{operator} must either be :& or :|"
     end
@@ -26,17 +34,23 @@ module CanCanCan::Squeel::ExpressionCombinator
   #
   # Boolean simplification is done for the +ALWAYS_TRUE+ and +ALWAYS_FALSE+ values.
   # @param [Squeel::Nodes::Node] left_expression The left expression.
+  # @param [Array] left_expression_joins An array of joins which the Squeel expression must be
+  #   joined to.
   # @param [Squeel::Nodes::Node] right_expression The right expression.
-  # @return [Squeel::Nodes::Node] The conjunction of the left and right expression.
-  def conjunction_expressions(left_expression, right_expression)
+  # @param [Array] right_expression_joins An array of joins which the Squeel expression must be
+  #   joined to.
+  # @return [Array<(Squeel::Nodes::Node, Array)>] A tuple containing the conjunction of the left and
+  #   right expressions, as well as an array of joins which the Squeel expression must be joined to.
+  def conjunction_expressions(left_expression, left_expression_joins, right_expression,
+                              right_expression_joins)
     if left_expression == ALWAYS_FALSE || right_expression == ALWAYS_FALSE
-      ALWAYS_FALSE
+      [ALWAYS_FALSE, []]
     elsif left_expression == ALWAYS_TRUE
-      right_expression
+      [right_expression, right_expression_joins]
     elsif right_expression == ALWAYS_TRUE
-      left_expression
+      [left_expression, left_expression_joins]
     else
-      left_expression & right_expression
+      [left_expression & right_expression, left_expression_joins + right_expression_joins]
     end
   end
 
@@ -44,17 +58,23 @@ module CanCanCan::Squeel::ExpressionCombinator
   #
   # Boolean simplification is done for the +ALWAYS_TRUE+ and +ALWAYS_FALSE+ values.
   # @param [Squeel::Nodes::Node] left_expression The left expression.
+  # @param [Array] left_expression_joins An array of joins which the Squeel expression must be
+  #   joined to.
   # @param [Squeel::Nodes::Node] right_expression The right expression.
-  # @return [Squeel::Nodes::Node] The disjunction of the left and right expression.
-  def disjunction_expressions(left_expression, right_expression)
+  # @param [Array] right_expression_joins An array of joins which the Squeel expression must be
+  #   joined to.
+  # @return [Array<(Squeel::Nodes::Node, Array)>] A tuple containing the disjunction of the left and
+  #   right expressions, as well as an array of joins which the Squeel expression must be joined to.
+  def disjunction_expressions(left_expression, left_expression_joins, right_expression,
+                              right_expression_joins)
     if left_expression == ALWAYS_TRUE || right_expression == ALWAYS_TRUE
-      ALWAYS_TRUE
+      [ALWAYS_TRUE, []]
     elsif left_expression == ALWAYS_FALSE
-      right_expression
+      [right_expression, right_expression_joins]
     elsif right_expression == ALWAYS_FALSE
-      left_expression
+      [left_expression, left_expression_joins]
     else
-      left_expression | right_expression
+      [left_expression | right_expression, left_expression_joins + right_expression_joins]
     end
   end
 end
