@@ -161,5 +161,14 @@ RSpec.describe CanCanCan::Squeel do
         expect(accessible).to contain_exactly(blue)
       end
     end
+
+    it 'allows querying unloaded associations using a database query' do
+      ability.can(:read, Parent, children: { parent_id: 2 })
+      parent = Parent.create!
+      expect(parent.children).to receive(:where).and_call_original
+
+      ability.can?(:read, parent)
+      expect(parent.children).not_to be_loaded
+    end
   end
 end

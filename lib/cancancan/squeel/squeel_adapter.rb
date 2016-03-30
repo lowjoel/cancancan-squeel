@@ -10,12 +10,28 @@ class CanCanCan::Squeel::SqueelAdapter < CanCan::ModelAdapters::AbstractAdapter
   end
 
   def self.override_condition_matching?(subject, name, _)
-    return false unless subject.class.respond_to?(:defined_enums)
-
-    subject.class.defined_enums.include?(name.to_s)
+    match_relation?(subject, name) || match_enum?(subject, name)
   end
 
   def self.matches_condition?(subject, name, value)
+    if match_relation?(subject, name)
+      matches_relation?(subject, name, value)
+    elsif match_enum?(subject, name)
+      matches_enum?(subject, name, value)
+    else
+      false
+    end
+  end
+
+  # Overrides condition matching for enums.
+  def self.match_enum?(subject, name)
+    klass = subject.class
+    klass.respond_to?(:defined_enums) && klass.defined_enums.include?(name.to_s)
+  end
+  private_class_method :match_enum?
+
+  # Overrides condition matching for enums.
+  def self.matches_enum?(subject, name, value)
     # Get the mapping from enum strings to values.
     enum = subject.class.public_send(name.to_s.pluralize)
 
@@ -25,6 +41,21 @@ class CanCanCan::Squeel::SqueelAdapter < CanCan::ModelAdapters::AbstractAdapter
     # Check to see if the value matches the condition.
     value.is_a?(Enumerable) ? value.include?(attribute) : attribute == value
   end
+  private_class_method :matches_enum?
+
+  def self.match_relation?(subject, name)
+    subject_attribute = subject.public_send(name)
+    subject_attribute.is_a?(ActiveRecord::Relation) && !subject_attribute.loaded
+  end
+  private_class_method :match_relation?
+
+  def self.matches_relation?(subject, name, value)
+    relation = subject.public_send(name)
+    klass = subject.class.reflect_on_association(name).klass
+
+    relation.where { CanCanCan::Squeel::ExpressionBuilder.build(self, klass, :==, value) }.any?
+  end
+  private_class_method :matches_relation?
 
   def database_records
     # TODO: Handle overridden scopes.

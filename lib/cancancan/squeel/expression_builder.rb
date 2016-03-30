@@ -35,7 +35,6 @@ module CanCanCan::Squeel::ExpressionBuilder
       end
     end
   end
-  module_function :build_expression_node
 
   # Builds a comparison node for the given key and value.
   #
