@@ -1,4 +1,10 @@
-## master
+## 0.1.3
+
+### enhancements
+
+ - Support ranges in conditions [@lowjoel](https://github.com/lowjoel) 
+
+## 0.1.2
 
 ### enhancements
 
