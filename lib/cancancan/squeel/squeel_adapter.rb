@@ -52,11 +52,14 @@ class CanCanCan::Squeel::SqueelAdapter < CanCan::ModelAdapters::AbstractAdapter
   def self.matches_relation?(subject, name, value)
     relation = subject.public_send(name)
     klass = subject.class.reflect_on_association(name).klass
+    join_list = nil
 
-    relation.where do
-      expression, = CanCanCan::Squeel::ExpressionBuilder.build(self, klass, :==, value)
+    scope = relation.where do
+      expression, join_list = CanCanCan::Squeel::ExpressionBuilder.build(self, klass, :==, value)
       expression
-    end.any?
+    end
+
+    add_joins_to_scope(scope, join_list, :inner).any?
   end
   private_class_method :matches_relation?
 
@@ -64,6 +67,25 @@ class CanCanCan::Squeel::SqueelAdapter < CanCan::ModelAdapters::AbstractAdapter
     # TODO: Handle overridden scopes.
     relation.distinct
   end
+
+  # Builds a relation, outer joined on the provided associations.
+  #
+  # @param [ActiveRecord::Relation] scope The current scope to add the joins to.
+  # @param [Array<Array<Symbol>>] joins The set of associations to outer join with.
+  # @param [Symbol] join_type The type of join; defaults to outer joins.
+  # @return [ActiveRecord::Relation] The built relation.
+  def self.add_joins_to_scope(scope, joins, join_type = :outer)
+    joins.reduce(scope) do |result, join|
+      result.joins do
+        join.reduce(self) do |relation, association|
+          relation = relation.__send__(association)
+          relation = relation.__send__(join_type) unless join_type == :inner
+          relation
+        end
+      end
+    end
+  end
+  private_class_method :add_joins_to_scope
 
   private
 
@@ -82,19 +104,9 @@ class CanCanCan::Squeel::SqueelAdapter < CanCan::ModelAdapters::AbstractAdapter
     add_joins_to_scope(scope, join_list)
   end
 
-  # Builds a relation, outer joined on the provided associations.
-  #
-  # @param [ActiveRecord::Relation] scope The current scope to add the joins to.
-  # @param [Array<Array<Symbol>>] joins The set of associations to outer join with.
-  # @return [ActiveRecord::Relation] The built relation.
-  def add_joins_to_scope(scope, joins)
-    joins.reduce(scope) do |result, join|
-      result.joins do
-        join.reduce(self) do |relation, association|
-          relation.__send__(association).outer
-        end
-      end
-    end
+  # @see CanCanCan::Squeel::SqueelAdapter.add_joins_to_scope
+  def add_joins_to_scope(*args)
+    self.class.send(:add_joins_to_scope, *args)
   end
 
   # This builds Squeel expression for each rule, and combines the expression with those to the left

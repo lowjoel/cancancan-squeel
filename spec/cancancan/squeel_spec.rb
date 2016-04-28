@@ -203,5 +203,16 @@ RSpec.describe CanCanCan::Squeel do
       ability.can?(:read, parent)
       expect(parent.children).not_to be_loaded
     end
+
+    context 'when unloaded associations include joins' do
+      it 'adds the necessary joins' do
+        parent = Parent.create!
+        ability.can(:read, Parent, children: { parent: { id: 2 }})
+        expect(parent.children).to receive(:where).and_call_original
+
+        expect(ability.can?(:read, parent)).to eq(false)
+        expect(parent.children).not_to be_loaded
+      end
+    end
   end
 end

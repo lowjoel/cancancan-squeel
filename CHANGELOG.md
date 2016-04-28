@@ -1,3 +1,10 @@
+## master
+
+### bug fixes
+
+ - Allow querying nested unloaded associations using a database query.
+   [@lowjoel](https://github.com/lowjoel)
+
 ## 0.1.3
 
 ### enhancements
